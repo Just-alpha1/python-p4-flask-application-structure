@@ -1,0 +1,34 @@
+#!/bin/bash
+# Simple Flask + Pipenv Shell Launcher
+
+echo "🚀 Starting Flask Development Environment..."
+echo "📦 Installing dependencies if needed..."
+
+# Install dependencies if needed
+if [ ! -f "Pipfile.lock" ]; then
+    pipenv install
+fi
+
+echo "🔥 Starting Flask server on http://127.0.0.1:5555"
+echo "💡 When you exit the shell, Flask will automatically stop"
+echo ""
+
+# Start Flask in background
+python server/app.py &
+FLASK_PID=$!
+echo "✅ Flask started with PID: $FLASK_PID"
+
+# Function to cleanup Flask when shell exits
+cleanup() {
+    echo ""
+    echo "🛑 Stopping Flask server (PID: $FLASK_PID)..."
+    kill $FLASK_PID 2>/dev/null
+    wait $FLASK_PID 2>/dev/null
+    echo "👋 Development environment stopped!"
+}
+
+# Set trap to cleanup on shell exit
+trap cleanup EXIT
+
+# Activate pipenv shell
+exec pipenv shell

@@ -1,0 +1,88 @@
+
+
+#!/bin/bash
+# Flask Development Environment Manager
+
+case "$1" in
+    "install")
+        echo "📦 Installing dependencies..."
+        pipenv install
+        echo "✅ Dependencies installed!"
+        ;;
+    "shell")
+        echo "🚀 Starting Flask Development Environment..."
+        
+        # Install dependencies if needed
+        if [ ! -f "Pipfile.lock" ] || [ "Pipfile" -nt "Pipfile.lock" ]; then
+            echo "📦 Installing dependencies..."
+            pipenv install
+        fi
+        
+        echo "💡 Activating pipenv shell..."
+        echo "💡 After shell activates, run: source flask-setup.sh"
+        echo ""
+        
+        # Activate pipenv shell
+        exec pipenv shell
+        ;;
+    "start")
+        echo "🔥 Starting Flask server..."
+        cd server && python app.py
+        ;;
+    "run")
+        echo "🚀 Starting Flask + pipenv shell..."
+        
+        # Install dependencies if needed
+        if [ ! -f "Pipfile.lock" ] || [ "Pipfile" -nt "Pipfile.lock" ]; then
+            echo "📦 Installing dependencies..."
+            pipenv install
+        fi
+        
+        # Start Flask in background and activate shell
+        echo "🔥 Starting Flask server on http://127.0.0.1:5555"
+        cd server && python app.py &
+        FLASK_PID=$!
+        cd ..
+        
+        echo "✅ Flask started with PID: $FLASK_PID"
+        echo "🌐 Your Flask app is running on http://127.0.0.1:5555"
+        echo "💡 Type 'exit' to stop Flask and exit the shell"
+        echo ""
+        
+        # Function to cleanup Flask when shell exits
+        cleanup() {
+            echo ""
+            echo "🛑 Stopping Flask server (PID: $FLASK_PID)..."
+            kill $FLASK_PID 2>/dev/null
+            wait $FLASK_PID 2>/dev/null
+            echo "👋 Development environment stopped!"
+        }
+        
+        # Set trap to cleanup on shell exit
+        trap cleanup EXIT
+        
+        # Activate pipenv shell
+        exec pipenv shell
+        ;;
+    "stop")
+        echo "🛑 Stopping all Flask processes..."
+        pkill -f "python server/app.py"
+        echo "✅ Flask stopped!"
+        ;;
+    *)
+        echo "Usage: $0 {install|shell|run|start|stop}"
+        echo ""
+        echo "Commands:"
+        echo "  install  - Install dependencies"
+        echo "  shell    - Enter pipenv shell (then run: source flask-setup.sh)"
+        echo "  run      - Start Flask + enter pipenv shell (RECOMMENDED)"
+        echo "  start    - Start Flask server only"
+        echo "  stop     - Stop Flask server"
+        echo ""
+        echo "💡 Recommended workflow:"
+        echo "   1. ./flask-dev run        (Flask + shell)"
+        echo "   OR"
+        echo "   1. ./flask-dev shell      (shell only)"
+        echo "   2. source flask-setup.sh  (start Flask)"
+        ;;
+esac
